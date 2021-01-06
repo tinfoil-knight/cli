@@ -49,15 +49,16 @@ const startFrameworkServer = async function ({ settings, log, exit }) {
   }
 
   log(`${NETLIFYDEVLOG} Starting Netlify Dev with ${settings.framework || 'custom config'}`)
-  const commandBin = await which(settings.command).catch((error) => {
+  const [command, ...commandArgs] = settings.command.split(/\s+/)
+  const commandBin = await which(command).catch((error) => {
     if (error.code === 'ENOENT') {
       throw new Error(
-        `"${settings.command}" could not be found in your PATH. Please make sure that "${settings.command}" is installed and available in your PATH`,
+        `"${command}" could not be found in your PATH. Please make sure that "${command}" is installed and available in your PATH`,
       )
     }
     throw error
   })
-  const ps = childProcess.spawn(commandBin, settings.args, {
+  const ps = childProcess.spawn(commandBin, commandArgs, {
     env: { ...process.env, ...settings.env, FORCE_COLOR: 'true' },
     stdio: 'pipe',
   })
@@ -70,7 +71,7 @@ const startFrameworkServer = async function ({ settings, log, exit }) {
   const handleProcessExit = function (code) {
     log(
       code > 0 ? NETLIFYDEVERR : NETLIFYDEVWARN,
-      `"${[settings.command, ...settings.args].join(' ')}" exited with code ${code}. Shutting down Netlify Dev server`,
+      `"${settings.command}" exited with code ${code}. Shutting down Netlify Dev server`,
     )
     process.exit(code)
   }

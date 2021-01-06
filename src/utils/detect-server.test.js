@@ -127,7 +127,7 @@ test('serverSettings: "dir" flag', async (t) => {
   t.is(settings.functions, devConfig.functions)
   t.is(settings.dist, flags.dir)
   t.is(settings.framework, undefined)
-  t.is(settings.cmd, undefined)
+  t.is(settings.command, undefined)
   t.is(settings.noCmd, true)
 })
 
@@ -173,7 +173,7 @@ test('serverSettings: when no framework is detected', async (t) => {
   t.is(settings.functions, devConfig.functions)
   t.is(settings.dist, devConfig.publish)
   t.is(settings.framework, undefined)
-  t.is(settings.cmd, undefined)
+  t.is(settings.command, undefined)
   t.is(settings.noCmd, true)
 })
 
@@ -182,7 +182,7 @@ test('serverSettings: no config', async (t) => {
   const settings = await serverSettings(devConfig, {}, t.context.sitePath, () => {})
   t.is(settings.dist, t.context.sitePath)
   t.is(settings.framework, undefined)
-  t.is(settings.cmd, undefined)
+  t.is(settings.command, undefined)
   t.truthy(settings.port)
   t.truthy(settings.frameworkPort)
   t.is(settings.noCmd, true)

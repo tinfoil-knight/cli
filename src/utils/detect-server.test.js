@@ -6,7 +6,7 @@ const getPort = require('get-port')
 
 const { createSiteBuilder } = require('../../tests/utils/site-builder')
 
-const { loadDetector, serverSettings, chooseDefaultArgs } = require('./detect-server')
+const { serverSettings } = require('./detect-server')
 
 const TARGET_PORT = 1234
 const CUSTOM_PORT = 3000
@@ -26,20 +26,6 @@ test.before(async (t) => {
 test.after(async (t) => {
   process.chdir(t.context.cwd)
   await t.context.builder.cleanupAsync()
-})
-
-test('loadDetector: valid', (t) => {
-  const detector = loadDetector('create-react-app.js')
-  t.is(typeof detector, 'function')
-})
-
-test('loadDetector: invalid', (t) => {
-  t.throws(
-    () => {
-      loadDetector('cry.js')
-    },
-    { message: /Failed to load detector/ },
-  )
 })
 
 test('serverSettings: minimal config', async (t) => {
@@ -64,24 +50,21 @@ test('serverSettings: "command" override npm', async (t) => {
   const devConfig = { framework: '#custom', command: 'npm run dev', targetPort: TARGET_PORT }
   const settings = await serverSettings(devConfig, {}, t.context.sitePath, () => {})
   t.is(settings.framework, devConfig.framework)
-  t.is(settings.command, devConfig.command.split(' ')[0])
-  t.deepEqual(settings.args, devConfig.command.split(' ').slice(1))
+  t.is(settings.command, devConfig.command)
 })
 
 test('serverSettings: "command" override yarn', async (t) => {
   const devConfig = { framework: '#custom', command: 'yarn dev', targetPort: TARGET_PORT }
   const settings = await serverSettings(devConfig, {}, t.context.sitePath, () => {})
   t.is(settings.framework, devConfig.framework)
-  t.is(settings.command, devConfig.command.split(' ')[0])
-  t.deepEqual(settings.args, devConfig.command.split(' ').slice(1))
+  t.is(settings.command, devConfig.command)
 })
 
 test('serverSettings: custom framework parameters', async (t) => {
   const devConfig = { framework: '#custom', command: 'yarn dev', targetPort: CUSTOM_PORT, publish: t.context.sitePath }
   const settings = await serverSettings(devConfig, {}, t.context.sitePath, () => {})
   t.is(settings.framework, '#custom')
-  t.is(settings.command, devConfig.command.split(' ')[0])
-  t.deepEqual(settings.args, devConfig.command.split(' ').slice(1))
+  t.is(settings.command, devConfig.command)
   t.is(settings.targetPort, devConfig.frameworkPort)
   t.is(settings.dist, devConfig.publish)
 })
@@ -186,10 +169,4 @@ test('serverSettings: no config', async (t) => {
   t.truthy(settings.port)
   t.truthy(settings.frameworkPort)
   t.is(settings.noCmd, true)
-})
-
-test('chooseDefaultArgs', (t) => {
-  const possibleArgsArrs = [['run', 'dev'], ['run develop']]
-  const args = chooseDefaultArgs(possibleArgsArrs)
-  t.deepEqual(args, possibleArgsArrs[0])
 })

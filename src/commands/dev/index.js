@@ -41,7 +41,7 @@ const startFrameworkServer = async function ({ settings, log, exit }) {
 
     await new Promise((resolve) => {
       server.start(function onListening() {
-        log(`\n${NETLIFYDEVLOG} Server listening to`, settings.frameworkPort)
+        log(`\n${NETLIFYDEVLOG} Static server listening to`, settings.frameworkPort)
         resolve()
       })
     })

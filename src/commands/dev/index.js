@@ -15,7 +15,7 @@ const wrapAnsi = require('wrap-ansi')
 
 const { startFunctionsServer } = require('../../lib/functions/server')
 const Command = require('../../utils/command')
-const { serverSettings } = require('../../utils/detect-server')
+const { detectServerSettings } = require('../../utils/detect-server-settings')
 const { getSiteInformation, injectEnvVariables } = require('../../utils/dev')
 const { startLiveTunnel } = require('../../utils/live-tunnel')
 const { NETLIFYDEV, NETLIFYDEVLOG, NETLIFYDEVWARN, NETLIFYDEVERR } = require('../../utils/logo')
@@ -29,7 +29,7 @@ const SERVER_POLL_INTERVAL = 1e3
 const SERVER_POLL_TIMEOUT = 2e4
 
 const startFrameworkServer = async function ({ settings, log, exit }) {
-  if (settings.noCmd) {
+  if (settings.useStaticServer) {
     const server = new StaticServer({
       rootPath: settings.dist,
       name: 'netlify-dev',
@@ -232,7 +232,7 @@ class DevCommand extends Command {
 
     let settings = {}
     try {
-      settings = await serverSettings(devConfig, flags, site.root, log)
+      settings = await detectServerSettings(devConfig, flags, site.root, log)
     } catch (error) {
       log(NETLIFYDEVERR, error.message)
       exit(1)

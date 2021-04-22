@@ -1,16 +1,13 @@
-const childProcess = require('child_process')
 const path = require('path')
 const process = require('process')
 
 const { flags: flagsLib } = require('@oclif/command')
 const boxen = require('boxen')
 const chalk = require('chalk')
-const fetch = require('node-fetch')
-const waitFor = require('p-wait-for')
+const execa = require('execa')
 const StaticServer = require('static-server')
 const stripAnsiCc = require('strip-ansi-control-characters')
 const waitPort = require('wait-port')
-const which = require('which')
 const wrapAnsi = require('wrap-ansi')
 
 const { startFunctionsServer } = require('../../lib/functions/server')
@@ -22,11 +19,6 @@ const { NETLIFYDEV, NETLIFYDEVLOG, NETLIFYDEVWARN, NETLIFYDEVERR } = require('..
 const openBrowser = require('../../utils/open-browser')
 const { startProxy } = require('../../utils/proxy')
 const { startForwardProxy } = require('../../utils/traffic-mesh')
-
-// 1 second
-const SERVER_POLL_INTERVAL = 1e3
-// 20 seconds
-const SERVER_POLL_TIMEOUT = 2e4
 
 const startFrameworkServer = async function ({ settings, log, exit }) {
   if (settings.useStaticServer) {
@@ -49,24 +41,10 @@ const startFrameworkServer = async function ({ settings, log, exit }) {
   }
 
   log(`${NETLIFYDEVLOG} Starting Netlify Dev with ${settings.framework || 'custom config'}`)
-  const [command, ...commandArgs] = settings.command.split(/\s+/)
-  const commandBin = await which(command).catch((error) => {
-    if (error.code === 'ENOENT') {
-      throw new Error(
-        `"${command}" could not be found in your PATH. Please make sure that "${command}" is installed and available in your PATH`,
-      )
-    }
-    throw error
-  })
-  const ps = childProcess.spawn(commandBin, commandArgs, {
-    env: { ...process.env, ...settings.env, FORCE_COLOR: 'true' },
-    stdio: 'pipe',
-  })
-
-  ps.stdout.pipe(stripAnsiCc.stream()).pipe(process.stdout)
-  ps.stderr.pipe(stripAnsiCc.stream()).pipe(process.stderr)
-
-  process.stdin.pipe(process.stdin)
+  const frameworkProcess = execa.command(settings.command, { preferLocal: true })
+  frameworkProcess.stdout.pipe(stripAnsiCc.stream()).pipe(process.stdout)
+  frameworkProcess.stderr.pipe(stripAnsiCc.stream()).pipe(process.stderr)
+  process.stdin.pipe(frameworkProcess.stdin)
 
   const handleProcessExit = function (code) {
     log(
@@ -75,16 +53,12 @@ const startFrameworkServer = async function ({ settings, log, exit }) {
     )
     process.exit(code)
   }
-  ps.on('close', handleProcessExit)
-  ps.on('SIGINT', handleProcessExit)
-  ps.on('SIGTERM', handleProcessExit)
+  frameworkProcess.on('close', handleProcessExit)
+  frameworkProcess.on('SIGINT', handleProcessExit)
+  frameworkProcess.on('SIGTERM', handleProcessExit)
   ;['SIGINT', 'SIGTERM', 'SIGQUIT', 'SIGHUP', 'exit'].forEach((signal) => {
     process.on(signal, () => {
-      try {
-        process.kill(-ps.pid)
-      } catch (error) {
-        // Ignore
-      }
+      frameworkProcess.kill('SIGTERM', { forceKillAfterTimeout: 500 })
       process.exit()
     })
   })
@@ -94,42 +68,17 @@ const startFrameworkServer = async function ({ settings, log, exit }) {
       port: settings.frameworkPort,
       output: 'silent',
       timeout: FRAMEWORK_PORT_TIMEOUT,
+      ...(settings.pollingStrategies.includes('HTTP') && { protocol: 'http' }),
     })
 
     if (!open) {
       throw new Error(`Timed out waiting for port '${settings.frameworkPort}' to be open`)
-    }
-
-    if (!settings.disableLocalServerPolling) {
-      const waitForServerToRespond = async () => {
-        try {
-          await fetch(`http://localhost:${settings.frameworkPort}`, {
-            method: 'HEAD',
-            timeout: SERVER_POLL_INTERVAL,
-          })
-        } catch (_) {
-          return false
-        }
-
-        return true
-      }
-
-      try {
-        await waitFor(waitForServerToRespond, {
-          interval: SERVER_POLL_INTERVAL,
-          timeout: SERVER_POLL_TIMEOUT,
-        })
-      } catch (_) {
-        log(NETLIFYDEVWARN, 'Netlify Dev could not verify that your framework server is responding to requests.')
-      }
     }
   } catch (error) {
     log(NETLIFYDEVERR, `Netlify Dev could not connect to localhost:${settings.frameworkPort}.`)
     log(NETLIFYDEVERR, `Please make sure your framework server is running on port ${settings.frameworkPort}`)
     exit(1)
   }
-
-  return ps
 }
 
 // 10 minutes

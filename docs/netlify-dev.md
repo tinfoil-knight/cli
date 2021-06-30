@@ -109,7 +109,7 @@ Netlify Dev is meant to work with zero config for the majority of users, by usin
   functions = "functions" # netlify dev uses this directory to scaffold and serve your functions
   publish = "dist"
 
-# note: each of these fields are OPTIONAL, with an exception that when you're specifying "command" and "targetPort", you must specify framework = "#custom"
+# note: each of these fields are OPTIONAL
 [dev]
   command = "yarn start" # Command to start your dev server
   targetPort = 3000 # The port for your application server, framework or site generator
@@ -134,7 +134,6 @@ Netlify Dev will attempt to detect the site generator or build command that you 
 # sample dev block in the toml
 # note: each of these fields are OPTIONAL and should only be used if you need an override
 [dev]
-  framework = "#custom"
   command = "yarn start" # Command to start your dev server
   port = 8888 # The port that the netlify dev will be accessible on
   publish = "dist" # If you use a _redirect file, provide the path to your static content folder
@@ -149,11 +148,12 @@ against your project.
   framework = "create-react-app" # or "#static" to force a static server
 ```
 
-The `framework` option should be one of the available
-[project types which Netlify Dev can detect](https://github.com/netlify/cli/tree/main/src/detectors)
-or `#auto` (default) to test all available detectors, `#static` for a static
-file server or `#custom` to use `command` option to run an app server and
-`targetPort` option to connect to it.
+Possible values of `framework`:
+
+- `#auto` (default) to check of all [available frameworks](https://github.com/netlify/framework-info/tree/main/src/frameworks).
+- One of the framework ids as specified [here](https://github.com/netlify/framework-info/tree/main/src/frameworks).
+- `#static` for a static file server
+- `#custom` to use the `command` option to run an app server and `targetPort` option to connect to it
 
 ## Explanation of ports in Netlify Dev
 

@@ -161,9 +161,9 @@ There will be a number of ports that you will encounter when using Netlify Dev, 
 
 - If your site generator runs on port 8000 for example, Netlify Dev needs to be told to connect to that port, so, it can route the requests successfully to the site generator along with the rest of the local Netlify environment
 - If you're running a project we have a detector for, we hardcode those conventional ports so you don't have to supply it yourself. If we have multiple detectors that match, we'll ask you to choose.
-- However, sometimes you're using some unrecogized site generator or just have a server you want Netlify Dev to connect to. This is when you go to the `netlify.toml` `[dev]` block to specify exactly what port we should listen to.
+- However, sometimes you're using some unrecognized site generator or just have a server you want Netlify Dev to connect to. This is when you go to the `netlify.toml` `[dev]` block to specify exactly what port we should listen to.
 
-As for which port to use while doing local development in Netlify Dev, always look for this box in your console output and use that:
+As for which port to use while doing local development in Netlify Dev, always search for this box in your console output and use that:
 
 ```bash
    ┌──────────────────────────────────────────────────────────────┐

@@ -1,5 +1,6 @@
 const normalizers = [
   { pattern: /netlify-cli\/.+node-.+/g, value: 'netlify-cli/test-version test-os test-node-version' },
+  { pattern: /\d{5}/g, value: '88888' },
 ]
 
 const normalize = (inputString) =>

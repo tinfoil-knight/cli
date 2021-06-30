@@ -245,7 +245,6 @@ DevCommand.flags = {
   dir: flagsLib.string({
     char: 'd',
     description: 'dir with static files',
-    exclusive: ['command', 'targetPort'],
   }),
   functions: flagsLib.string({
     char: 'f',

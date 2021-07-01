@@ -20,42 +20,54 @@ const openBrowser = require('../../utils/open-browser')
 const { startProxy } = require('../../utils/proxy')
 const { startForwardProxy } = require('../../utils/traffic-mesh')
 
+const startStaticServer = async ({ settings, log }) => {
+  const server = new StaticServer({
+    rootPath: settings.dist,
+    name: 'netlify-dev',
+    port: settings.frameworkPort,
+    templates: {
+      notFound: path.join(settings.dist, '404.html'),
+    },
+  })
+
+  await new Promise((resolve) => {
+    server.start(function onListening() {
+      log(`\n${NETLIFYDEVLOG} Static server listening to`, settings.frameworkPort)
+      resolve()
+    })
+  })
+}
+
 const startFrameworkServer = async function ({ settings, log, exit }) {
   if (settings.useStaticServer) {
-    const server = new StaticServer({
-      rootPath: settings.dist,
-      name: 'netlify-dev',
-      port: settings.frameworkPort,
-      templates: {
-        notFound: path.join(settings.dist, '404.html'),
-      },
-    })
-
-    await new Promise((resolve) => {
-      server.start(function onListening() {
-        log(`\n${NETLIFYDEVLOG} Static server listening to`, settings.frameworkPort)
-        resolve()
-      })
-    })
-    return
+    return await startStaticServer({ settings, log })
   }
 
   log(`${NETLIFYDEVLOG} Starting Netlify Dev with ${settings.framework || 'custom config'}`)
-  const frameworkProcess = execa.command(settings.command, { preferLocal: true })
+
+  const frameworkProcess = execa.command(settings.command, { preferLocal: true, reject: false })
   frameworkProcess.stdout.pipe(stripAnsiCc.stream()).pipe(process.stdout)
   frameworkProcess.stderr.pipe(stripAnsiCc.stream()).pipe(process.stderr)
   process.stdin.pipe(frameworkProcess.stdin)
 
-  const handleProcessExit = function (code) {
-    log(
-      code > 0 ? NETLIFYDEVERR : NETLIFYDEVWARN,
-      `"${settings.command}" exited with code ${code}. Shutting down Netlify Dev server`,
-    )
-    process.exit(code)
-  }
-  frameworkProcess.on('close', handleProcessExit)
-  frameworkProcess.on('SIGINT', handleProcessExit)
-  frameworkProcess.on('SIGTERM', handleProcessExit)
+  // eslint-disable-next-line promise/catch-or-return,promise/prefer-await-to-then
+  frameworkProcess.then(async () => {
+    const result = await frameworkProcess
+    const { exitCode = 0 } = result
+    // eslint-disable-next-line promise/always-return
+    if (result instanceof Error && result.code === 'ENOENT') {
+      log(
+        NETLIFYDEVERR,
+        `Failed launching framework server. Please verify ${chalk.magenta(`'${settings.command}' exists`)}`,
+      )
+    } else {
+      log(
+        exitCode > 0 ? NETLIFYDEVERR : NETLIFYDEVWARN,
+        `"${settings.command}" exited with code ${exitCode}. Shutting down Netlify Dev server`,
+      )
+    }
+    process.exit(1)
+  })
   ;['SIGINT', 'SIGTERM', 'SIGQUIT', 'SIGHUP', 'exit'].forEach((signal) => {
     process.on(signal, () => {
       frameworkProcess.kill('SIGTERM', { forceKillAfterTimeout: 500 })

@@ -178,7 +178,11 @@ test('should start custom command if framework=#custom, command and targetPort a
     await builder.withNetlifyToml({ config: { dev: { framework: '#custom', publish: 'public' } } }).buildAsync()
 
     const error = await t.throwsAsync(() =>
-      withDevServer({ cwd: builder.directory, args: ['--command', 'exit 1', '--targetPort', '3000'] }, () => {}, true),
+      withDevServer(
+        { cwd: builder.directory, args: ['--command', 'echo hello', '--targetPort', '3000'] },
+        () => {},
+        true,
+      ),
     )
     t.snapshot(normalize(error.stdout))
   })

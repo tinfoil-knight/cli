@@ -8,7 +8,6 @@ const { handleQuestions, CONFIRM, DOWN } = require('./utils/handle-questions')
 const { withSiteBuilder } = require('./utils/site-builder')
 const { normalize } = require('./utils/snapshots')
 
-const args = ['--offline']
 const content = 'Hello World!'
 
 test('should default to process.cwd() and static server', async (t) => {
@@ -20,7 +19,7 @@ test('should default to process.cwd() and static server', async (t) => {
       })
       .buildAsync()
 
-    await withDevServer({ cwd: builder.directory, args }, async ({ url, output }) => {
+    await withDevServer({ cwd: builder.directory }, async ({ url, output }) => {
       const response = await got(url).text()
       t.is(response, content)
 
@@ -38,7 +37,7 @@ test('should use static server when --dir flag is passed', async (t) => {
       })
       .buildAsync()
 
-    await withDevServer({ cwd: builder.directory, args: [...args, '--dir', 'public'] }, async ({ url, output }) => {
+    await withDevServer({ cwd: builder.directory, args: ['--dir', 'public'] }, async ({ url, output }) => {
       const response = await got(url).text()
       t.is(response, content)
 
@@ -57,7 +56,7 @@ test('should use static server when framework is set to #static', async (t) => {
       .withNetlifyToml({ config: { dev: { framework: '#static' } } })
       .buildAsync()
 
-    await withDevServer({ cwd: builder.directory, args }, async ({ url, output }) => {
+    await withDevServer({ cwd: builder.directory }, async ({ url, output }) => {
       const response = await got(url).text()
       t.is(response, content)
 
@@ -76,7 +75,7 @@ test('should warn if using static server and `command` is configured', async (t)
       .buildAsync()
 
     await withDevServer(
-      { cwd: builder.directory, args: [...args, '--dir', 'public', '--command', 'npm run start'] },
+      { cwd: builder.directory, args: ['--dir', 'public', '--command', 'npm run start'] },
       async ({ url, output }) => {
         const response = await got(url).text()
         t.is(response, content)
@@ -97,7 +96,7 @@ test('should warn if using static server and `targetPort` is configured', async 
       .buildAsync()
 
     await withDevServer(
-      { cwd: builder.directory, args: [...args, '--dir', 'public', '--targetPort', '3000'] },
+      { cwd: builder.directory, args: ['--dir', 'public', '--targetPort', '3000'] },
       async ({ url, output }) => {
         const response = await got(url).text()
         t.is(response, content)
@@ -115,7 +114,7 @@ test('should use `command` and `targetPort` when configured', async (t) => {
     // a failure is expected since we use `echo hello` instead of starting a server
     const error = await t.throwsAsync(() =>
       withDevServer(
-        { cwd: builder.directory, args: [...args, '--command', 'echo hello', '--targetPort', '3000'] },
+        { cwd: builder.directory, args: ['--command', 'echo hello', '--targetPort', '3000'] },
         () => {},
         true,
       ),
@@ -128,7 +127,7 @@ test('should force specific framework when configured', async (t) => {
   await withSiteBuilder('site-with-mocked-cra', async (builder) => {
     await builder.withNetlifyToml({ config: { dev: { framework: 'create-react-app' } } }).buildAsync()
 
-    const error = await t.throwsAsync(() => withDevServer({ cwd: builder.directory, args }, () => {}, true))
+    const error = await t.throwsAsync(() => withDevServer({ cwd: builder.directory }, () => {}, true))
     t.snapshot(normalize(error.stdout))
   })
 })
@@ -137,7 +136,7 @@ test('should throw when forcing a non supported framework', async (t) => {
   await withSiteBuilder('site-with-unknown-framework', async (builder) => {
     await builder.withNetlifyToml({ config: { dev: { framework: 'to-infinity-and-beyond-js' } } }).buildAsync()
 
-    const error = await t.throwsAsync(() => withDevServer({ cwd: builder.directory, args }, () => {}, true))
+    const error = await t.throwsAsync(() => withDevServer({ cwd: builder.directory }, () => {}, true))
     t.snapshot(normalize(error.stdout))
   })
 })
@@ -147,7 +146,7 @@ test('should detect a known framework', async (t) => {
     await builder.withPackageJson({ packageJson: { dependencies: { 'react-scripts': '1.0.0' } } }).buildAsync()
 
     // a failure is expected since this is not a true create-react-app project
-    const error = await t.throwsAsync(() => withDevServer({ cwd: builder.directory, args }, () => {}, true))
+    const error = await t.throwsAsync(() => withDevServer({ cwd: builder.directory }, () => {}, true))
     t.snapshot(normalize(error.stdout))
   })
 })
@@ -157,7 +156,7 @@ test('should throw if framework=#custom but command is missing', async (t) => {
     await builder.withNetlifyToml({ config: { dev: { framework: '#custom' } } }).buildAsync()
 
     const error = await t.throwsAsync(() =>
-      withDevServer({ cwd: builder.directory, args: [...args, '--targetPort', '3000'] }, () => {}, true),
+      withDevServer({ cwd: builder.directory, args: ['--targetPort', '3000'] }, () => {}, true),
     )
     t.snapshot(normalize(error.stdout))
   })
@@ -168,7 +167,7 @@ test('should throw if framework=#custom but targetPort is missing', async (t) =>
     await builder.withNetlifyToml({ config: { dev: { framework: '#custom' } } }).buildAsync()
 
     const error = await t.throwsAsync(() =>
-      withDevServer({ cwd: builder.directory, args: [...args, '--command', 'echo hello'] }, () => {}, true),
+      withDevServer({ cwd: builder.directory, args: ['--command', 'echo hello'] }, () => {}, true),
     )
     t.snapshot(normalize(error.stdout))
   })
@@ -179,11 +178,7 @@ test('should start custom command if framework=#custom, command and targetPort a
     await builder.withNetlifyToml({ config: { dev: { framework: '#custom', publish: 'public' } } }).buildAsync()
 
     const error = await t.throwsAsync(() =>
-      withDevServer(
-        { cwd: builder.directory, args: [...args, '--command', 'exit 1', '--targetPort', '3000'] },
-        () => {},
-        true,
-      ),
+      withDevServer({ cwd: builder.directory, args: ['--command', 'exit 1', '--targetPort', '3000'] }, () => {}, true),
     )
     t.snapshot(normalize(error.stdout))
   })

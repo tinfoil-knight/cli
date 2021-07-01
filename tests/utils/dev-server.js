@@ -26,6 +26,13 @@ let currentPort = getRandomPortStart()
 // Those are set for GitHub actions
 const ENVS_TO_OMIT = ['LANG', 'LC_ALL']
 
+const getExecaOptions = ({ cwd, env }) => ({
+  cwd,
+  extendEnv: false,
+  env: { ...omit(process.env, ENVS_TO_OMIT), BROWSER: 'none', ...env },
+  encoding: 'utf8',
+})
+
 const startServer = async ({ cwd, offline = true, env = {}, args = [] }) => {
   const tryPort = currentPort
   currentPort += 1
@@ -36,12 +43,7 @@ const startServer = async ({ cwd, offline = true, env = {}, args = [] }) => {
   const ps = execa(
     cliPath,
     ['dev', offline ? '--offline' : '', '-p', port, '--staticServerPort', port + FRAMEWORK_PORT_SHIFT, ...args],
-    {
-      cwd,
-      extendEnv: false,
-      env: { ...omit(process.env, ENVS_TO_OMIT), BROWSER: 'none', ...env },
-      encoding: 'utf8',
-    },
+    getExecaOptions({ cwd, env }),
   )
   let output = ''
   const serverPromise = new Promise((resolve, reject) => {
@@ -105,4 +107,5 @@ const withDevServer = async (options, testHandler, expectFailure = false) => {
 module.exports = {
   withDevServer,
   startDevServer,
+  getExecaOptions,
 }

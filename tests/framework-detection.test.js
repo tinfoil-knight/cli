@@ -2,7 +2,7 @@ const test = require('ava')
 const execa = require('execa')
 
 const cliPath = require('./utils/cli-path')
-const { withDevServer } = require('./utils/dev-server')
+const { withDevServer, getExecaOptions } = require('./utils/dev-server')
 const got = require('./utils/got')
 const { handleQuestions, CONFIRM, DOWN } = require('./utils/handle-questions')
 const { withSiteBuilder } = require('./utils/site-builder')
@@ -193,9 +193,7 @@ test('should prompt when multiple frameworks are detected', async (t) => {
 
     // a failure is expected since this is not a true framework project
     const error = await t.throwsAsync(async () => {
-      const childProcess = execa(cliPath, ['dev', '--offline'], {
-        cwd: builder.directory,
-      })
+      const childProcess = execa(cliPath, ['dev', '--offline'], getExecaOptions({ cwd: builder.directory }))
 
       handleQuestions(childProcess, [
         {

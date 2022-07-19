@@ -410,11 +410,11 @@ const onRequest = async ({ addonsUrls, edgeFunctionsProxy, functionsServer, prox
     ? null
     : await createStreamPromise(req, BYTES_LIMIT)
 
-  const edgeFunctionsProxyURL = await edgeFunctionsProxy(req, res)
+  // const edgeFunctionsProxyURL = await edgeFunctionsProxy(req, res)
 
-  if (edgeFunctionsProxyURL !== undefined) {
-    return proxy.web(req, res, { target: edgeFunctionsProxyURL })
-  }
+  // if (edgeFunctionsProxyURL !== undefined) {
+  //   return proxy.web(req, res, { target: edgeFunctionsProxyURL })
+  // }
 
   if (isFunction(settings.functionsPort, req.url)) {
     return proxy.web(req, res, { target: functionsServer })
@@ -490,7 +490,7 @@ const startProxy = async function ({ addonsUrls, config, configPath, getUpdatedC
     settings,
     addonsUrls,
     functionsServer,
-    edgeFunctionsProxy,
+    // edgeFunctionsProxy,
   })
   const server = settings.https
     ? https.createServer({ cert: settings.https.cert, key: settings.https.key }, onRequestWithOptions)
